@@ -71,23 +71,13 @@ endif
 if exists("g:sclangWindowOrientation")
 	let s:sclangWindowOrientation = g:sclangWindowOrientation
 else
-	if executable("tmux")
-		let s:sclangWindowOrientation = "h"
-	endif
-	if executable("screen")
-		let s:sclangWindowOrientation = "v"
-	endif
+	let s:sclangWindowOrientation = "h"
 endif
 
 if exists("g:sclangWindowSize")
 	let s:sclangWindowSize = g:sclangWindowSize
 else
-	if executable("tmux")
-		let s:sclangWindowSize = 50
-	endif
-	if executable("screen")
-		let s:sclangWindowSize = 140
-	endif
+	let s:sclangWindowSize = 50
 endif
 
 " ========================================================================================
@@ -238,7 +228,7 @@ function SClangStart(...)
 				call system("tmux split-window -" . s:sclangWindowOrientation . " -p " . s:sclangWindowSize . " ; tmux send-keys " . s:sclangPipeApp . " Enter ; tmux select-pane -l")
 			endif
 			if a:0 == 1 
-				call system("tmux split-window -" . a:1 . " -p 20 ; tmux send-keys " . s:sclangPipeApp . " Enter ; tmux lelect-pane -l")
+				call system("tmux split-window -" . a:1 . " -p " . s:sclangWindowSize  . "  ; tmux send-keys " . s:sclangPipeApp . " Enter ; tmux select-pane -l")
 			endif
 			if a:0 == 2 
 				call system("tmux split-window -" . a:1 . " -p " . a:2 . " ; tmux send-keys " . s:sclangPipeApp . " Enter ; tmux select-pane -l")
@@ -248,42 +238,28 @@ function SClangStart(...)
 			echo "Sorry, something went wrong..."
 		endif
 		if executable("screen")
-			if a:0 == 0
+			function ScreenResize(...)
 				let b:screenName = system("echo -n $STY")
-				if s:sclangWindowOrientation == "h"
+				let b:orientation = a:1
+				let b:screenSize = 100 - a:2
+				if b:orientation == "h"
 					call system("screen -S " . b:screenName . " -X split")
 				endif
-				if s:sclangWindowOrientation == "v"
+				if b:orientation == "v"
 					call system("screen -S " . b:screenName . " -X split -v")
 				endif
 				call system("screen -S " . b:screenName . " -X eval focus screen focus")
 				call system("screen -S " . b:screenName . " -X at 1# exec " . s:sclangPipeApp)
-				call system("screen -S " . b:screenName . " -X resize " . s:sclangWindowSize)
+				call system("screen -S " . b:screenName . " -X resize " . b:screenSize . "%")
+			endfunction
+			if a:0 == 0
+				call ScreenResize(s:sclangWindowOrientation, s:sclangWindowSize)
 			endif
 			if a:0 == 1
-				if a:1 == "h"
-					let b:screenName = system("echo -n $STY")
-					call system("screen -S " . b:screenName . " -X eval split focus screen focus")
-				endif
-				if a:1 == "v"
-					let b:screenName = system("echo -n $STY")
-					call system("screen -S " . b:screenName . " -X split -v")
-					call system("screen -S " . b:screenName . " -X eval focus screen focus")
-				endif
-				call system("screen -S " . b:screenName . " -X at 1# exec " . s:sclangPipeApp)
+				call ScreenResize(a:1, s:sclangWindowSize)
 			endif
 			if a:0 == 2
-				if a:1 == "h"
-					let b:screenName = system("echo -n $STY")
-					call system("screen -S " . b:screenName . " -X split")
-				endif
-				if a:1 == "v"
-					let b:screenName = system("echo -n $STY")
-					call system("screen -S " . b:screenName . " -X split -v")
-				endif
-				call system("screen -S " . b:screenName . " -X eval focus screen focus")
-				call system("screen -S " . b:screenName . " -X at 1# exec " . s:sclangPipeApp)
-				call system("screen -S " . b:screenName . " -X resize " . a:2)
+				call ScreenResize(a:1, a:2)
 			endif
 			call system("screen -S " . b:screenName . " -X bindkey -k k5 ")
 			let s:sclangStarted = 1
